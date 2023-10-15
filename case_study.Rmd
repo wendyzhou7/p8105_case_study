@@ -1,0 +1,94 @@
+---
+title: "case_study"
+output: html_document
+
+---
+
+```{r}
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+library(leaflet)
+```
+
+
+```{r}
+library(p8105.datasets)
+
+data(nyc_airbnb)
+
+nyc_airbnb = 
+  nyc_airbnb |> 
+  rename(borough = neighbourhood_group) |> 
+  mutate(stars = review_scores_location/2)
+```
+
+
+```{r}
+nyc_airbnb |> 
+  count(borough)
+```
+
+```{r}
+nyc_airbnb |> 
+  group_by(borough, room_type) |> 
+  summarise(mean_price = mean(price)) |> 
+  pivot_wider(
+    names_from = room_type,
+    values_from = mean_price
+  )
+```
+
+```{r}
+nyc_airbnb |> 
+  filter(price < 1000, room_type == "Entire home/apt") |> 
+  ggplot(aes(x = price)) +
+  geom_histogram() + 
+  facet_grid(. ~ borough)
+```
+Since there is so much happening within manhattan, we can take a closer look:
+
+
+```{r}
+nyc_airbnb |> 
+  filter(price < 1000, 
+         room_type == "Entire home/apt",
+         borough == "Manhattan") |> 
+  mutate(neighbourhood = fct_reorder(neighbourhood, price)) |>  #factor reorder of neighborhood by price -- avg price of each neigh
+  ggplot(aes(x = price, y = neighbourhood)) + 
+  geom_density_ridges()
+```
+
+## Try to make a map
+```{r}
+nyc_airbnb |> 
+  filter(price < 1000, 
+         room_type == "Entire home/apt",
+         borough == "Manhattan") |> 
+  ggplot(aes(x = lat, y = long, color = price)) + 
+  geom_point()
+```
+
+Try something different entirely
+```{r}
+nyc_airbnb |> 
+  filter(price < 1000, 
+         room_type == "Entire home/apt",
+         borough == "Manhattan") |> 
+  sample_n(500) |> 
+  leaflet() |> 
+  addTiles() |> 
+  addCircleMarkers(~lat, ~long, radius = .5)
+
+#difficult to run entire dataset, so using sample size of 500 to load easier  
+```
+
+
+
+
+
+
+
+
